@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Enzo Donadelli</title>
+    <style>
+        html, body {
+            margin: 0;
+            padding: 0;
+            height: 100%;
+        }
+        #myCanvas {
+            background-color: #290244; /* Dark purple background */
+            display: block;
+            width: 100vw;
+            height: 100vh;
+        }
+        #centerText {
+            font-family: 'Monaco', sans-serif;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: white;
+            font-size: 70px;
+            text-align: center;
+        }
+        #centerText2 {
+            font-family: 'Monaco', sans-serif;
+            position: absolute;
+            top: 57%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: white;
+            font-size: 30px;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+
+    <canvas id="myCanvas"></canvas>
+    <div id="centerText">Enzo Donadelli</div>
+    <div id="centerText2">Web Developer</div>
+    <script>
+        const canvas = document.getElementById('myCanvas');
+        const ctx = canvas.getContext('2d');
+
+        function resizeCanvas() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        }
+        window.addEventListener('resize', resizeCanvas);
+        resizeCanvas();
+
+        const ballRadius = 7; // Ball radius remains unchanged
+        const traceRadius = ballRadius / 2; // Smaller trace radius
+        const maxBalls = 7;
+        let balls = [];
+        let cornerIndex = 0; // Initialize cornerIndex
+
+        function drawBall(ball) {
+            ctx.beginPath();
+            ctx.arc(ball.x, ball.y, ballRadius, 0, Math.PI * 2);
+            ctx.fillStyle = '#CBC3E3'; 
+            ctx.fill();
+            ctx.closePath();
+        }
+
+        function drawTrace(ball) {
+            ball.traces.forEach(trace => {
+                ctx.beginPath();
+                ctx.arc(trace.x, trace.y, traceRadius, 0, Math.PI * 2);
+                ctx.fillStyle = `rgba(177, 100, 217, ${trace.alpha})`;
+                ctx.fill();
+                ctx.closePath();
+            });
+        }
+
+        function updateBalls() {
+            balls.forEach((ball, index) => {
+                // Update ball position
+                ball.x += ball.dx;
+                ball.y += ball.dy;
+
+                if (ball.x - ballRadius < 0 || ball.x + ballRadius > canvas.width) {
+                    ball.dx = -ball.dx;
+                }
+                if (ball.y - ballRadius < 0 || ball.y + ballRadius > canvas.height) {
+                    ball.dy = -ball.dy;
+                }
+
+                // Add a new trace with full opacity
+                ball.traces.push({ x: ball.x, y: ball.y, alpha: 1 });
+                // Decrease alpha for each trace and remove faded ones
+                ball.traces.forEach(trace => {
+                    trace.alpha -= 0.02;
+                });
+                ball.traces = ball.traces.filter(trace => trace.alpha > 0);
+
+                // Collision detection with other balls
+                for (let i = index + 1; i < balls.length; i++) {
+                    const dx = ball.x - balls[i].x;
+                    const dy = ball.y - balls[i].y;
+                    const distance = Math.sqrt(dx * dx + dy * dy);
+                    if (distance < ballRadius * 2) {
+                        ball.dx = -ball.dx;
+                        ball.dy = -ball.dy;
+                        balls[i].dx = -balls[i].dx;
+                        balls[i].dy = -balls[i].dy;
+                    }
+                }
+            });
+        }
+
+        function draw() {
+            // Draw a dark purple background with slight transparency to see old traces
+            ctx.fillStyle = 'rgba(75, 0, 130, 0.1)';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            balls.forEach(drawTrace);
+            balls.forEach(drawBall);
+        }
+
+        function gameLoop() {
+            updateBalls();
+            draw();
+            requestAnimationFrame(gameLoop);
+        }
+
+        function addBall() {
+            if (balls.length >= maxBalls) {
+                balls.shift();
+            }
+            const angle = Math.random() * Math.PI * 2;
+            let x, y;
+            switch (cornerIndex) {
+                case 0:
+                    x = ballRadius;
+                    y = ballRadius;
+                    break;
+                case 1:
+                    x = canvas.width - ballRadius;
+                    y = ballRadius;
+                    break;
+                case 2:
+                    x = ballRadius;
+                    y = canvas.height - ballRadius;
+                    break;
+                case 3:
+                    x = canvas.width - ballRadius;
+                    y = canvas.height - ballRadius;
+                    break;
+            }
+            cornerIndex = (cornerIndex + 1) % 4;
+            balls.push({
+                x: x,
+                y: y,
+                dx: Math.cos(angle) * 3,
+                dy: Math.sin(angle) * 3,
+                traces: []
+            });
+        }
+
+        function clearCanvas() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            balls = [];
+        }
+
+        setInterval(addBall, 1000); // Add a new ball every second
+        setInterval(clearCanvas, 60000); // Clear the canvas every 60 seconds
+        gameLoop();
+    </script>
+
+</body>
+</html>

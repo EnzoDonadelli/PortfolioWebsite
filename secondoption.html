@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Enzo Donadelli</title>
+    <style>
+        html, body {
+            margin: 0;
+            padding: 0;
+            height: 100%;
+        }
+        #myCanvas {
+            background-color: grey;
+            display: block;
+            width: 100vw;
+            height: 100vh;
+        }
+        #centerText {
+            font-family: 'Monaco', sans-serif;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: white;
+            font-size: 70px;
+            text-align: center;
+        }
+        #centerText2 {
+            font-family: 'Monaco', sans-serif;
+            position: absolute;
+            top: 57%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: white;
+            font-size: 30px;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+
+    <canvas id="myCanvas"></canvas>
+    <div id="centerText">Enzo Donadelli</div>
+    <div id="centerText2">Web Developer</div>
+    <script>
+        const canvas = document.getElementById('myCanvas');
+        const ctx = canvas.getContext('2d');
+
+        function resizeCanvas() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        }
+        window.addEventListener('resize', resizeCanvas);
+        resizeCanvas();
+
+        const paddleWidth = 20;
+        const paddleHeight = 150;
+        const ballRadius = 10;
+        const bulletRadius = 5;
+
+        let player1Y = (canvas.height - paddleHeight) / 2;
+        let player2Y = (canvas.height - paddleHeight) / 2;
+        let player1DY = 0;
+        let player2DY = 0;
+
+        let bullets = [];
+
+        let player1Score = 0;
+        let player2Score = 0;
+
+        let player1Shake = 0;
+        let player2Shake = 0;
+
+        function drawPaddle(x, y, color, shake) {
+            ctx.fillStyle = color;
+            ctx.fillRect(x + shake, y, paddleWidth, paddleHeight);
+        }
+
+        function drawBall(ball) {
+            ctx.beginPath();
+            ctx.arc(ball.x, ball.y, ballRadius, 0, Math.PI * 2);
+            ctx.fillStyle = 'white';
+            ctx.fill();
+            ctx.closePath();
+        }
+
+        function drawBullet(bullet) {
+            ctx.beginPath();
+            ctx.arc(bullet.x, bullet.y, bulletRadius, 0, Math.PI * 2);
+            ctx.fillStyle = 'red';
+            ctx.fill();
+            ctx.closePath();
+        }
+
+        function drawScores() {
+            ctx.fillStyle = 'white';
+            ctx.font = '20px Arial';
+            ctx.fillText(player1Score, canvas.width / 4, 50);
+            ctx.fillText(player2Score, 3 * canvas.width / 4, 50);
+        }
+
+        function updateBullets() {
+            bullets.forEach((bullet, index) => {
+                bullet.x += bullet.dx;
+                bullet.y += bullet.dy;
+
+                if (bullet.x - bulletRadius < 0 || bullet.x + bulletRadius > canvas.width) {
+                    bullets.splice(index, 1);
+                }
+
+                if (bullet.x - bulletRadius < paddleWidth && bullet.y > player1Y && bullet.y < player1Y + paddleHeight) {
+                    player2Score++;
+                    bullets.splice(index, 1);
+                    player1Shake = 10;
+                }
+
+                if (bullet.x + bulletRadius > canvas.width - paddleWidth && bullet.y > player2Y && bullet.y < player2Y + paddleHeight) {
+                    player1Score++;
+                    bullets.splice(index, 1);
+                    player2Shake = 10;
+                }
+            });
+        }
+
+        function update() {
+            player1Y += player1DY;
+            player2Y += player2DY;
+
+            if (player1Y < 0) player1Y = 0;
+            if (player1Y + paddleHeight > canvas.height) player1Y = canvas.height - paddleHeight;
+            if (player2Y < 0) player2Y = 0;
+            if (player2Y + paddleHeight > canvas.height) player2Y = canvas.height - paddleHeight;
+
+            updateBullets();
+
+            if (player1Shake > 0) player1Shake--;
+            if (player2Shake > 0) player2Shake--;
+        }
+
+        function draw() {
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.1)';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            drawPaddle(0, player1Y, 'darkblue', player1Shake ? Math.random() * 10 - 5 : 0);
+            drawPaddle(canvas.width - paddleWidth, player2Y, 'purple', player2Shake ? Math.random() * 10 - 5 : 0);
+            bullets.forEach(drawBullet);
+            drawScores();
+        }
+
+        function gameLoop() {
+            update();
+            draw();
+            requestAnimationFrame(gameLoop);
+        }
+
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'w') player1DY = -5;
+            if (e.key === 's') player1DY = 5;
+            if (e.key === 'ArrowUp') player2DY = -5;
+            if (e.key === 'ArrowDown') player2DY = 5;
+            if (e.key === 'd') bullets.push({ x: paddleWidth, y: player1Y + paddleHeight / 2, dx: 5, dy: 0 });
+            if (e.key === 'ArrowLeft') bullets.push({ x: canvas.width - paddleWidth, y: player2Y + paddleHeight / 2, dx: -5, dy: 0 });
+        });
+
+        document.addEventListener('keyup', (e) => {
+            if (e.key === 'w' || e.key === 's') player1DY = 0;
+            if (e.key === 'ArrowUp' || e.key === 'ArrowDown') player2DY = 0;
+        });
+
+        gameLoop();
+        
+    </script>
+
+</body>
+</html>
